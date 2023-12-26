@@ -1,0 +1,1 @@
+stock_file = "./config/stocks.ini"
