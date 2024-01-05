@@ -21,6 +21,7 @@ router = APIRouter()
 
 class Item(BaseModel):
     code: str
+    action: str
 
 
 @router.get("/")
@@ -59,21 +60,7 @@ def add(request: Request,
         return {"action": "add", "code": code, "result": rs}
 
 
-# 删除自选
-@router.api_route("/stocks/delete", methods=["GET", "POST"])
-def delete(request: Request,
-           item: Optional[Item] = None
-           ):
-    if request.method == 'GET':
-        res = RedirectResponse(url="/", status_code=302)
-        return res
-    if request.method == 'POST':
-        code = item.code
-        rs = StockUtil.remove_stock(code=code, file=stock_file)
-        return {"action": "delete", "code": code, "result": rs}
-
-
-# 置顶自选
+# 置顶/置底/删除自选
 @router.api_route("/stocks/change", methods=["GET", "POST"])
 def change(request: Request,
            item: Optional[Item] = None
@@ -83,5 +70,13 @@ def change(request: Request,
         return res
     if request.method == 'POST':
         code = item.code
-        rs = StockUtil.totop_stock(code=code, file=stock_file)
-        return {"action": "totop", "code": code, "result": rs}
+        action = item.action
+        if action == 'totop':
+            rs = StockUtil.totop_stock(code=code, file=stock_file)
+            return {"action": "totop", "code": code, "result": rs}
+        elif action == 'totail':
+            rs = StockUtil.totail_stock(code=code, file=stock_file)
+            return {"action": "totail", "code": code, "result": rs}
+        elif action == 'delete':
+            rs = StockUtil.remove_stock(code=code, file=stock_file)
+            return {"action": "delete", "code": code, "result": rs}

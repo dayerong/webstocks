@@ -1,204 +1,239 @@
 {% extends 'base.html' %}
 {% block title %}我的自选{% endblock %}
 {% block head %}
-{{ super() }}
-<style type="text/css">
-    .table th, .table td {
-        text-align: center;
-        vertical-align: middle !important;
-    }
-</style>
+    {{ super() }}
+    <style type="text/css">
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle !important;
+        }
+    </style>
 {% endblock %}
 {% block body %}
-<body onload="time()">
-<div id="price" class="container">
-    <hr width=100% size=3 color=#5151A2 style="FILTER: alpha(opacity=200,finishopacity=0,style=5)">
-    <div class="col-md-12 ">
-        <form class="form-horizontal" method="post" action="/stocks/add" id="add_form">
-            <div class="form-group">
-                <div class="text-left">
-                    <input type="text" name="code" placeholder="输入股票代码加入自选" value="{{ code }}" required autofocus>
-                    <input type="submit" value="添加"/>
-                    <span id="showtime" class="badge pull-right"></span>
-                    <!--                    <span id="showtime" class="btn-success pull-right"></span>-->
+    <body onload="time()">
+    <div id="price" class="container">
+        <hr width=100% size=3 color=#5151A2 style="FILTER: alpha(opacity=200,finishopacity=0,style=5)">
+        <div class="col-md-12 ">
+            <form class="form-horizontal" method="post" action="/stocks/add" id="add_form">
+                <div class="form-group">
+                    <div class="text-left">
+                        <input type="text" name="code" placeholder="输入股票代码加入自选" value="{{ code }}" required autofocus>
+                        <input type="submit" value="添加"/>
+                        <span id="showtime" class="badge pull-right"></span>
+                        <!--                    <span id="showtime" class="btn-success pull-right"></span>-->
+                    </div>
                 </div>
-            </div>
-        </form>
-    </div>
-    <div>
-        <table class="table table-bordered table-striped" style="table-layout:fixed;word-break:break-all">
-            <thead class="thead-dark">
-            <tr>
-                <th scope="col">代码</th>
-                <th scope="col">名称</th>
-                <th scope="col">最新价</th>
-                <th scope="col">涨跌幅</th>
-                <th scope="col">操作</th>
-            </tr>
-            </thead>
-            {% if data %}
-            <tbody id="pricelist">
-            {% for row in data %}
-            <tr>
-                <td>{{ row.get("代码") }}</td>
-                <td>{{ row.get("名称") }}</td>
-                {% if row.get("最新价") == "--" or row.get("涨跌幅") == "--" %}
-                <td>--</td>
-                <td>--</td>
-                {% else %}
-                <td>{{ '%0.2f'| format(row.get("最新价")|float)}}</td>
-                <td>{{ '%0.2f'| format(row.get("涨跌幅")|float)}}%</td>
+            </form>
+        </div>
+        <div>
+            <table class="table table-bordered table-striped" style="table-layout:fixed;word-break:break-all">
+                <thead class="thead-dark">
+                <tr>
+                    <th scope="col">代码</th>
+                    <th scope="col">名称</th>
+                    <th scope="col">最新价</th>
+                    <th scope="col">涨跌幅</th>
+                    <th scope="col">操作</th>
+                </tr>
+                </thead>
+                {% if data %}
+                    <tbody id="pricelist">
+                    {% for row in data %}
+                        <tr>
+                            <td>{{ row.get("代码") }}</td>
+                            <td>{{ row.get("名称") }}</td>
+                            {% if row.get("最新价") == "--" or row.get("涨跌幅") == "--" %}
+                                <td>--</td>
+                                <td>--</td>
+                            {% else %}
+                                <td>{{ '%0.2f'| format(row.get("最新价")|float) }}</td>
+                                <td>{{ '%0.2f'| format(row.get("涨跌幅")|float) }}%</td>
+                            {% endif %}
+                            <td>
+                                <button id="delete" value="delete" class="btn btn-default btn-sm"
+                                        onclick="delete_stock(this)"> 删除
+                                </button>
+                                <button id="totop" value="totop" class="btn btn-default btn-sm"
+                                        onclick="totop_stock(this)"> 置顶
+                                </button>
+                                <button id="totail" value="totail" class="btn btn-default btn-sm"
+                                        onclick="totail_stock(this)"> 置底
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
                 {% endif %}
-                <td>
-                    <button id="delete" class="btn btn-default btn-sm" onclick="delete_stock(this)"> 删除</button>
-                    <button id="totop" class="btn btn-default btn-sm" onclick="totop_stock(this)"> 置顶</button>
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-            {% endif %}
-        </table>
+            </table>
+        </div>
     </div>
-</div>
 
-<script>
-    //  刷新价格
-    function priceupdate() {
-        $.ajax({
-            type: "POST",
-            url: "/stocks/price",
-            dataType: "json",
-            success: function (data) {   //变量data: 接口返回的数据
-                var str = "";
-                for (var i = 0; i < data.length; i++) {
-                    let price = data[i].最新价;
-                    let zdf = data[i].涨跌幅;
-                    str +=
-                        "<tr><td>" + data[i].代码 +
-                        "</td><td>" + data[i].名称;
-                    if (price === "--" || zdf === "--") {
-                        str +=
-                            "</td><td>--" +
-                            "</td><td>--";
-                    } else {
-                        str +=
-                            "</td><td>" + data[i].最新价.toFixed(2) +
-                            "</td><td>" + data[i].涨跌幅.toFixed(2) + "%";
-                    }
-                    str +=
-                        "</td><td>" +
-                        "<button id=\"delete\" class=\"btn btn-default btn-sm\" onclick=\"delete_stock(this)\"> 删除</button>\n" +
-                        "<button id=\"totop\" class=\"btn btn-default btn-sm\" onclick=\"totop_stock(this)\"> 置顶</button>" +
-                        "</td></tr>";
-                }
-                // console.log(data);
-                $("#pricelist").html(str);
-            },
-        });
-    }
-
-    // 添加自选
-    $("#add_form").submit(function (event) {
-        event.preventDefault(); //prevent default action
-        let post_url = $(this).attr("action"); //get form action url
-        let request_method = $(this).attr("method"); //get form GET/POST method
-        let form_data = $(this).serialize(); //Encode form elements for submission
-        $.ajax({
-            url: post_url,
-            type: request_method,
-            data: form_data,
-            success: function (res) {
-                if (res["result"] === 1000) {
-                    alert("警告！\n股票代码不存在。");
-                } else if (res["result"] === 1001) {
-                    alert("警告！\n股票已在自选中。");
-                }
-                console.log(res);
-                location.href = "/";
-            },
-        });
-    });
-
-    // 删除自选
-    function delete_stock(obj) {
-        var tr = $(obj).parent().parent();
-        var body = tr.children().text();
-        var code = body.slice(0, 6);
-        var judge = confirm("确认删除" + code + "吗？");
-        if (judge === true) {
-            tdNode = obj.parentNode;
-            trNOde = tdNode.parentNode;
-            tbNOde = trNOde.parentNode;
-            tbNOde.removeChild(trNOde);
-            post_data = {"code": code};
+    <script>
+        //  刷新价格
+        function priceupdate() {
             $.ajax({
-                url: "/stocks/delete",
+                type: "POST",
+                url: "/stocks/price",
+                dataType: "json",
+                success: function (data) {   //变量data: 接口返回的数据
+                    var str = "";
+                    for (var i = 0; i < data.length; i++) {
+                        let price = data[i].最新价;
+                        let zdf = data[i].涨跌幅;
+                        str +=
+                            "<tr><td>" + data[i].代码 +
+                            "</td><td>" + data[i].名称;
+                        if (price === "--" || zdf === "--") {
+                            str +=
+                                "</td><td>--" +
+                                "</td><td>--";
+                        } else {
+                            str +=
+                                "</td><td>" + data[i].最新价.toFixed(2) +
+                                "</td><td>" + data[i].涨跌幅.toFixed(2) + "%";
+                        }
+                        str +=
+                            "</td><td>" +
+                            "<button id=\"delete\" value=\"delete\" class=\"btn btn-default btn-sm\" onclick=\"delete_stock(this)\"> 删除</button>\n" +
+                            "<button id=\"totop\" value=\"totop\" class=\"btn btn-default btn-sm\" onclick=\"totop_stock(this)\"> 置顶</button>" +
+                            "<button id=\"totail\" value=\"totail\" class=\"btn btn-default btn-sm\" onclick=\"totail_stock(this)\"> 置底</button>" +
+                            "</td></tr>";
+                    }
+                    // console.log(data);
+                    $("#pricelist").html(str);
+                },
+            });
+        }
+
+        // 添加自选
+        $("#add_form").submit(function (event) {
+            event.preventDefault(); //prevent default action
+            let post_url = $(this).attr("action"); //get form action url
+            let request_method = $(this).attr("method"); //get form GET/POST method
+            let form_data = $(this).serialize(); //Encode form elements for submission
+            $.ajax({
+                url: post_url,
+                type: request_method,
+                data: form_data,
+                success: function (res) {
+                    if (res["result"] === 1000) {
+                        alert("警告！\n股票代码不存在。");
+                    } else if (res["result"] === 1001) {
+                        alert("警告！\n股票已在自选中。");
+                    }
+                    console.log(res);
+                    location.href = "/";
+                },
+            });
+        });
+
+        // 删除自选
+        function delete_stock(obj) {
+            var tr = $(obj).parent().parent();
+            var body = tr.children().text();
+            var code = body.slice(0, 6);
+            var button = document.getElementById("delete");
+            var button_value = button.value;
+            var judge = confirm("确认删除" + code + "吗？");
+            if (judge === true) {
+                tdNode = obj.parentNode;
+                trNOde = tdNode.parentNode;
+                tbNOde = trNOde.parentNode;
+                tbNOde.removeChild(trNOde);
+                post_data = {"code": code, "action": button_value};
+                $.ajax({
+                    url: "/stocks/change",
+                    type: 'post',
+                    dataType: "json",
+                    data: JSON.stringify(post_data),
+                    contentType: "application/json",
+                    success: function (res) {
+                        console.log(res);
+                    },
+                });
+            }
+        }
+
+        // 置顶
+        function totop_stock(obj) {
+            var tr = $(obj).parent().parent();
+            var $tr = $(this).parent('td').parent('tr');
+            var body = tr.children().text();
+            var code = body.slice(0, 6);
+            var button = document.getElementById("totop");
+            var button_value = button.value;
+            post_data = {"code": code, "action": button_value};
+            $.ajax({
+                url: "/stocks/change",
                 type: 'post',
                 dataType: "json",
                 data: JSON.stringify(post_data),
                 contentType: "application/json",
                 success: function (res) {
                     console.log(res);
+                    $("#pricelist").find("tr").first().before(tr);
                 },
             });
         }
-    }
 
-    // 置顶
-    function totop_stock(obj) {
-        var tr = $(obj).parent().parent();
-        var $tr = $(this).parent('td').parent('tr');
-        var body = tr.children().text();
-        var code = body.slice(0, 6);
-        post_data = {"code": code};
-        $.ajax({
-            url: "/stocks/change",
-            type: 'post',
-            dataType: "json",
-            data: JSON.stringify(post_data),
-            contentType: "application/json",
-            success: function (res) {
-                console.log(res);
-                $("#pricelist").find("tr").first().before(tr);
-            },
-        });
-    }
+        // 置底
+        function totail_stock(obj) {
+            var tr = $(obj).parent().parent();
+            var $tr = $(this).parent('td').parent('tr');
+            var body = tr.children().text();
+            var code = body.slice(0, 6);
+            var button = document.getElementById("totail");
+            var button_value = button.value;
+            post_data = {"code": code, "action": button_value};
+            $.ajax({
+                url: "/stocks/change",
+                type: 'post',
+                dataType: "json",
+                data: JSON.stringify(post_data),
+                contentType: "application/json",
+                success: function (res) {
+                    console.log(res);
+                    $("#pricelist").find("tr").last().after(tr);
+                },
+            });
+        }
 
-    // 定时刷新
-    function loop_check() {
-        var timeStamp = new Date();
-        var today = timeStamp.getDay();
-        var hour = new Date().getHours();
-        if (today === 0 || today === 6) {
-            // 非交易日，9小时定时刷新
-            console.log("非交易日 " + timeStamp.toLocaleString());
-            window.setTimeout("loop_check()", 32400000);
-        } else {
-            if (hour > 8 && hour < 15) {
-                // 9点至15点交易时间，2秒定时刷新
-                priceupdate();
-                window.setTimeout("loop_check()", 2000);
-            } else if (hour === 8) {
-                // 8点至9点非交易时间，15分钟定时刷新
-                console.log("交易日8点档 " + timeStamp.toLocaleString());
-                window.setTimeout("loop_check()", 900000);
+
+        // 定时刷新
+        function loop_check() {
+            var timeStamp = new Date();
+            var today = timeStamp.getDay();
+            var hour = new Date().getHours();
+            if (today === 0 || today === 6) {
+                // 非交易日，9小时定时刷新
+                console.log("非交易日 " + timeStamp.toLocaleString());
+                window.setTimeout("loop_check()", 32400000);
             } else {
-                // 其它非交易时间，1小时定时刷新
-                console.log("非交易时间 " + timeStamp.toLocaleString());
-                window.setTimeout("loop_check()", 3600000);
+                if (hour > 8 && hour < 15) {
+                    // 9点至15点交易时间，2秒定时刷新
+                    priceupdate();
+                    window.setTimeout("loop_check()", 2000);
+                } else if (hour === 8) {
+                    // 8点至9点非交易时间，15分钟定时刷新
+                    console.log("交易日8点档 " + timeStamp.toLocaleString());
+                    window.setTimeout("loop_check()", 900000);
+                } else {
+                    // 其它非交易时间，1小时定时刷新
+                    console.log("非交易时间 " + timeStamp.toLocaleString());
+                    window.setTimeout("loop_check()", 3600000);
+                }
             }
         }
-    }
 
-    loop_check();
+        loop_check();
 
-    // 时间显示
-    function time() {
-        var date = new Date();
-        var d1 = date.toLocaleString();
-        document.getElementById("showtime").innerHTML = d1;
-        setTimeout(time, 1000);
-    }
-</script>
-</body>
+        // 时间显示
+        function time() {
+            var date = new Date();
+            var d1 = date.toLocaleString();
+            document.getElementById("showtime").innerHTML = d1;
+            setTimeout(time, 1000);
+        }
+    </script>
+    </body>
 {% endblock %}
