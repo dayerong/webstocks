@@ -115,10 +115,11 @@
         function changeStock(button, action) {
             const tr = $(button).closest('tr');
             const code = tr.children().eq(0).text().trim();
-            const confirmMessage = `确认${action === 'delete' ? '删除' : action === 'totop' ? '置顶' : '置底'}${code}吗？`;
-            
+            const stock = tr.children().eq(1).text().trim();
+            const confirmMessage = `确认${action === 'delete' ? '删除【' : action === 'totop' ? '置顶' : '置底'}${stock}】吗？`;
+
             if (action === 'delete' && !confirm(confirmMessage)) return;
-            
+
             const post_data = { code, action };
             $.ajax({
                 url: "/stocks/change",
